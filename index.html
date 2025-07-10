@@ -576,9 +576,15 @@
         let tasks = JSON.parse(JSON.stringify(initialTasks)); // Deep copy
         let editingTask = null;
         let draggedTask = null;
+        let changesSinceBackup = false;
+
+        function markChanged() {
+            changesSinceBackup = true;
+        }
 
         function createCalendar(containerId, year, month) {
             const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear existing content
             const today = new Date();
 
             // Days of the week
@@ -635,11 +641,20 @@
                 dayDiv.classList.add('milestone');
             }
 
-            dayDiv.innerHTML = `
-                <div class="day-number">${dayNumber}</div>
-                <div class="task-list" data-date="${dateStr}"></div>
-                ${!isOtherMonth ? `<div class="add-task" onclick="addTask('${dateStr}')">+ Add Task</div>` : ''}
-            `;
+            const taskListDiv = document.createElement('div');
+            taskListDiv.className = 'task-list';
+            taskListDiv.setAttribute('data-date', dateStr);
+
+            const addTaskDiv = document.createElement('div');
+            addTaskDiv.className = 'add-task';
+            addTaskDiv.textContent = '+ Add Task';
+            addTaskDiv.onclick = () => addTask(dateStr);
+
+            dayDiv.innerHTML = `<div class="day-number">${dayNumber}</div>`;
+            dayDiv.appendChild(taskListDiv);
+            if (!isOtherMonth) {
+                dayDiv.appendChild(addTaskDiv);
+            }
 
             // Add drop zone functionality
             dayDiv.addEventListener('dragover', handleDragOver);
@@ -650,9 +665,8 @@
             container.appendChild(dayDiv);
 
             if (!isOtherMonth && tasks[dateStr]) {
-                const taskList = dayDiv.querySelector('.task-list');
                 tasks[dateStr].forEach((task, index) => {
-                    addTaskToList(taskList, task, dateStr, index);
+                    addTaskToList(taskListDiv, task, dateStr, index);
                 });
             }
         }
@@ -731,6 +745,7 @@
 
                 // Refresh calendars
                 refreshCalendars();
+                markChanged();
             }
 
             dropTarget.classList.remove('drop-zone');
@@ -738,16 +753,19 @@
         }
 
         function refreshCalendars() {
-            document.getElementById('july-calendar').innerHTML = '';
-            document.getElementById('august-calendar').innerHTML = '';
             createCalendar('july-calendar', 2025, 6); // July
             createCalendar('august-calendar', 2025, 7); // August
         }
 
         function addTask(dateStr) {
+            // Check if there's already an input form for this date
             const taskList = document.querySelector(`[data-date="${dateStr}"]`);
+            if (taskList.querySelector('.task-input')) {
+                return; // Already adding a task
+            }
             
             const inputDiv = document.createElement('div');
+            inputDiv.className = 'task-edit-form';
             inputDiv.innerHTML = `
                 <input type="text" class="task-input" placeholder="Enter task..." autofocus>
                 <select class="category-select">
@@ -759,17 +777,33 @@
                     <option value="video">Video/Content</option>
                 </select>
                 <div class="task-controls">
-                    <button class="btn btn-save" onclick="saveTask('${dateStr}', this)">Save</button>
-                    <button class="btn btn-cancel" onclick="cancelTask(this)">Cancel</button>
+                    <button class="btn btn-save">Save</button>
+                    <button class="btn btn-cancel">Cancel</button>
                 </div>
             `;
             
+            // Add event listeners to buttons
+            const saveBtn = inputDiv.querySelector('.btn-save');
+            const cancelBtn = inputDiv.querySelector('.btn-cancel');
+            const input = inputDiv.querySelector('.task-input');
+            
+            saveBtn.onclick = () => saveNewTask(dateStr, inputDiv);
+            cancelBtn.onclick = () => cancelTask(inputDiv);
+            
+            // Allow Enter key to save
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveNewTask(dateStr, inputDiv);
+                } else if (e.key === 'Escape') {
+                    cancelTask(inputDiv);
+                }
+            };
+            
             taskList.appendChild(inputDiv);
-            inputDiv.querySelector('.task-input').focus();
+            input.focus();
         }
 
-        function saveTask(dateStr, button) {
-            const inputDiv = button.closest('div').parentElement;
+        function saveNewTask(dateStr, inputDiv) {
             const input = inputDiv.querySelector('.task-input');
             const select = inputDiv.querySelector('.category-select');
             
@@ -784,13 +818,13 @@
                 
                 tasks[dateStr].push(newTask);
                 refreshCalendars();
+                markChanged();
             } else {
-                cancelTask(button);
+                cancelTask(inputDiv);
             }
         }
 
-        function cancelTask(button) {
-            const inputDiv = button.closest('div').parentElement;
+        function cancelTask(inputDiv) {
             inputDiv.remove();
         }
 
@@ -800,9 +834,13 @@
             editingTask = { dateStr, index };
             const task = tasks[dateStr][index];
             const taskList = document.querySelector(`[data-date="${dateStr}"]`);
-            const taskDiv = taskList.children[index];
+            const taskElements = taskList.querySelectorAll('.task');
+            const taskDiv = taskElements[index];
+            
+            if (!taskDiv) return;
             
             const inputDiv = document.createElement('div');
+            inputDiv.className = 'task-edit-form';
             inputDiv.innerHTML = `
                 <input type="text" class="task-input" value="${task.text}" autofocus>
                 <select class="category-select">
@@ -814,41 +852,64 @@
                     <option value="video" ${task.category === 'video' ? 'selected' : ''}>Video/Content</option>
                 </select>
                 <div class="task-controls">
-                    <button class="btn btn-save" onclick="updateTask(this)">Save</button>
-                    <button class="btn btn-delete" onclick="deleteTask(this)">Delete</button>
-                    <button class="btn btn-cancel" onclick="cancelEdit(this)">Cancel</button>
+                    <button class="btn btn-save">Save</button>
+                    <button class="btn btn-delete">Delete</button>
+                    <button class="btn btn-cancel">Cancel</button>
                 </div>
             `;
             
+            // Add event listeners
+            const saveBtn = inputDiv.querySelector('.btn-save');
+            const deleteBtn = inputDiv.querySelector('.btn-delete');
+            const cancelBtn = inputDiv.querySelector('.btn-cancel');
+            const input = inputDiv.querySelector('.task-input');
+            
+            saveBtn.onclick = () => updateTask(inputDiv);
+            deleteBtn.onclick = () => deleteTask();
+            cancelBtn.onclick = () => cancelEdit(inputDiv);
+            
+            // Allow Enter key to save
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    updateTask(inputDiv);
+                } else if (e.key === 'Escape') {
+                    cancelEdit(inputDiv);
+                }
+            };
+            
             taskList.replaceChild(inputDiv, taskDiv);
-            inputDiv.querySelector('.task-input').focus();
+            input.focus();
         }
 
-        function updateTask(button) {
-            const inputDiv = button.closest('div').parentElement;
+        function updateTask(inputDiv) {
             const input = inputDiv.querySelector('.task-input');
             const select = inputDiv.querySelector('.category-select');
             
-            if (input.value.trim()) {
+            if (input.value.trim() && editingTask) {
                 const { dateStr, index } = editingTask;
                 tasks[dateStr][index].text = input.value.trim();
                 tasks[dateStr][index].category = select.value;
                 refreshCalendars();
+                markChanged();
             }
             
             editingTask = null;
         }
 
-        function deleteTask(button) {
-            const { dateStr, index } = editingTask;
-            tasks[dateStr].splice(index, 1);
-            if (tasks[dateStr].length === 0) delete tasks[dateStr];
+        function deleteTask() {
+            if (editingTask) {
+                const { dateStr, index } = editingTask;
+                tasks[dateStr].splice(index, 1);
+                if (tasks[dateStr].length === 0) delete tasks[dateStr];
+                
+                refreshCalendars();
+                markChanged();
+            }
             
-            refreshCalendars();
             editingTask = null;
         }
 
-        function cancelEdit(button) {
+        function cancelEdit(inputDiv) {
             editingTask = null;
             refreshCalendars();
         }
@@ -928,9 +989,12 @@
         }
 
         function toggleTaskStatus(dateStr, index) {
-            tasks[dateStr][index].completed = !tasks[dateStr][index].completed;
-            refreshCalendars();
-            generateTaskList();
+            if (tasks[dateStr] && tasks[dateStr][index]) {
+                tasks[dateStr][index].completed = !tasks[dateStr][index].completed;
+                refreshCalendars();
+                generateTaskList();
+                markChanged();
+            }
         }
 
         function formatDate(dateStr) {
@@ -943,7 +1007,7 @@
 
         function exportTasks() {
             let exportText = "Genesis Marine Technologies - Task List\n";
-            exportText += "=" * 50 + "\n\n";
+            exportText += "=".repeat(50) + "\n\n";
             
             Object.keys(tasks).sort().forEach(date => {
                 exportText += `${formatDate(date)}:\n`;
@@ -1064,7 +1128,6 @@
 
         // Auto-backup functionality
         let autoBackupInterval;
-        let changesSinceBackup = false;
 
         function startAutoBackup() {
             // Auto-backup every 10 minutes if there are changes
@@ -1112,46 +1175,6 @@
                 statusElement.style.color = '';
                 statusElement.textContent = 'Enabled';
             }, 5000);
-        }
-
-        // Track changes to trigger auto-backup
-        function markChanged() {
-            changesSinceBackup = true;
-        }
-
-        // Override functions to track changes
-        const originalSaveTask = saveTask;
-        const originalUpdateTask = updateTask;
-        const originalDeleteTask = deleteTask;
-        const originalToggleTaskStatus = toggleTaskStatus;
-
-        function saveTask(dateStr, button) {
-            originalSaveTask(dateStr, button);
-            markChanged();
-        }
-
-        function updateTask(button) {
-            originalUpdateTask(button);
-            markChanged();
-        }
-
-        function deleteTask(button) {
-            originalDeleteTask(button);
-            markChanged();
-        }
-
-        function toggleTaskStatus(dateStr, index) {
-            originalToggleTaskStatus(dateStr, index);
-            markChanged();
-        }
-
-        // Also track drag and drop changes
-        const originalHandleDrop = handleDrop;
-        function handleDrop(e) {
-            originalHandleDrop(e);
-            if (draggedTask) {
-                markChanged();
-            }
         }
 
         // Initialize calendars and auto-backup
