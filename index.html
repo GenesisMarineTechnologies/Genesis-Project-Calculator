@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Marine Technologies - Project Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-header {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .btn-header:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .month-container {
+            padding: 20px;
+        }
+
+        .month-title {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e9ecef;
+            padding: 1px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .day-header {
+            background: #343a40;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .day {
+            background: white;
+            min-height: 140px;
+            padding: 8px;
+            position: relative;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+
+        .day:hover {
+            background: #f8f9fa;
+        }
+
+        .day.other-month {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .day.drop-zone {
+            background: #e3f2fd !important;
+            border: 2px dashed #2196f3 !important;
+        }
+
+        .day-number {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .day.other-month .day-number {
+            color: #adb5bd;
+        }
+
+        .task {
+            background: #007bff;
+            color: white;
+            padding: 3px 6px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: grab;
+            transition: all 0.2s;
+            word-wrap: break-word;
+            line-height: 1.3;
+            user-select: none;
+            position: relative;
+        }
+
+        .task:active {
+            cursor: grabbing;
+        }
+
+        .task.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            z-index: 1000;
+        }
+
+        .task:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .task.high-priority { background: #dc3545; }
+        .task.boat-prep { background: #007bff; }
+        .task.business { background: #28a745; }
+        .task.website { background: #ffc107; color: #212529; }
+        .task.facility { background: #6f42c1; }
+        .task.video { background: #fd7e14; }
+        .task.completed { 
+            background: #6c757d !important; 
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+
+        .add-task {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            color: #6c757d;
+            padding: 4px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-size: 0.7em;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .add-task:hover {
+            border-color: #007bff;
+            color: #007bff;
+            background: #e7f3ff;
+        }
+
+        .task-input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin: 2px 0;
+        }
+
+        .task-controls {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .btn {
+            padding: 2px 6px;
+            border: none;
+            border-radius: 3px;
+            font-size: 0.65em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save { background: #28a745; color: white; }
+        .btn-cancel { background: #6c757d; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+
+        .category-select {
+            width: 100%;
+            padding: 2px;
+            border: 1px solid #007bff;
+            border-radius: 3px;
+            font-size: 0.7em;
+            margin: 2px 0;
+        }
+
+        .milestone {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+        }
+
+        .today {
+            background: #e3f2fd !important;
+            border: 2px solid #2196f3;
+        }
+
+        /* Task List Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 300;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .category-section {
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .category-tasks {
+            padding: 10px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .task-date {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-right: 10px;
+        }
+
+        .status-toggle {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 70px;
+        }
+
+        .status-toggle.pending {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .status-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .calendar {
+                grid-template-columns: 1fr;
+            }
+            
+            .day {
+                min-height: 120px;
+            }
+            
+            .legend {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 2% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Genesis Marine Technologies</h1>
+            <p>Project Timeline - Testing Week July 14th | Video Shoot July 17-18th | Texas Groundbreaking End of July</p>
+            <div class="header-controls">
+                <button class="btn-header" onclick="openTaskList()">📋 View All Tasks</button>
+                <button class="btn-header" onclick="exportTasks()">📄 Export Tasks</button>
+                <button class="btn-header" onclick="saveProject()">💾 Save Project</button>
+                <button class="btn-header" onclick="document.getElementById('loadInput').click()">📁 Load Project</button>
+                <input type="file" id="loadInput" accept=".json" style="display: none;" onchange="loadProject(this)">
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.8em; opacity: 0.8;">
+                <span id="saveStatus">Ready to save</span> | Auto-backup: <span id="autoBackupStatus">Enabled</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #dc3545;"></div>
+                <span>High Priority</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #007bff;"></div>
+                <span>Boat Prep</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #28a745;"></div>
+                <span>Business/Financial</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffc107;"></div>
+                <span>Website</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #6f42c1;"></div>
+                <span>Facility/Construction</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fd7e14;"></div>
+                <span>Video/Content</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #6c757d;"></div>
+                <span>Completed</span>
+            </div>
+        </div>
+
+        <div class="month-container">
+            <div class="month-title">July 2025</div>
+            <div class="calendar" id="july-calendar" data-month="2025-07">
+                <!-- July calendar will be generated by JavaScript -->
+            </div>
+
+            <div class="month-title">August 2025</div>
+            <div class="calendar" id="august-calendar" data-month="2025-08">
+                <!-- August calendar will be generated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task List Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>All Tasks by Category</h2>
+                <span class="close" onclick="closeTaskList()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Task list will be generated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const initialTasks = {
+            '2025-07-01': [
+                { text: 'Reach out to investor and financial guy', category: 'business', completed: false },
+                { text: 'Website demo tour fix', category: 'website', completed: false }
+            ],
+            '2025-07-02': [
+                { text: 'Order 2 AWG cables for OBCM', category: 'boat-prep', completed: false },
+                { text: 'Source 1 1/8" ballast hose', category: 'boat-prep', completed: false },
+                { text: 'Website cleanup', category: 'website', completed: false }
+            ],
+            '2025-07-03': [
+                { text: 'Change propeller to Acme 3865', category: 'high-priority', completed: false },
+                { text: 'Texas HQ site preparation planning', category: 'facility', completed: false }
+            ],
+            '2025-07-04': [
+                { text: 'Install NetPower OBCM', category: 'high-priority', completed: false },
+                { text: 'Budget planning for Boat 1 demo ready', category: 'business', completed: false }
+            ],
+            '2025-07-07': [
+                { text: 'Cut and install Coosa sheets', category: 'high-priority', completed: false },
+                { text: 'Timeline for Miami boat show planning', category: 'business', completed: false }
+            ],
+            '2025-07-08': [
+                { text: 'Install ballast plumbing', category: 'high-priority', completed: false },
+                { text: 'Texas facility contractor meetings', category: 'facility', completed: false }
+            ],
+            '2025-07-09': [
+                { text: 'Check ballast air vents', category: 'high-priority', completed: false },
+                { text: 'Set ballast pump timers', category: 'high-priority', completed: false }
+            ],
+            '2025-07-10': [
+                { text: 'Fix touchscreen ballast buttons', category: 'high-priority', completed: false },
+                { text: 'Oil change on engine', category: 'boat-prep', completed: false }
+            ],
+            '2025-07-11': [
+                { text: 'Install RGB lighting', category: 'boat-prep', completed: false },
+                { text: 'Design surf tab wedges', category: 'boat-prep', completed: false }
+            ],
+            '2025-07-14': [
+                { text: 'TESTING WEEK BEGINS', category: 'high-priority', completed: false },
+                { text: 'Video shoot prep', category: 'video', completed: false }
+            ],
+            '2025-07-15': [
+                { text: 'Continue testing', category: 'high-priority', completed: false },
+                { text: 'Content creation planning', category: 'video', completed: false }
+            ],
+            '2025-07-17': [
+                { text: 'VIDEO SHOOT DAY 1', category: 'video', completed: false }
+            ],
+            '2025-07-18': [
+                { text: 'VIDEO SHOOT DAY 2', category: 'video', completed: false }
+            ],
+            '2025-07-25': [
+                { text: 'Texas groundbreaking preparation', category: 'facility', completed: false }
+            ],
+            '2025-07-31': [
+                { text: 'BREAK GROUND IN TEXAS - DEADLINE', category: 'high-priority', completed: false }
+            ],
+            '2025-08-01': [
+                { text: 'Post-groundbreaking follow up', category: 'facility', completed: false }
+            ],
+            '2025-08-05': [
+                { text: 'Miami boat show venue planning', category: 'business', completed: false }
+            ],
+            '2025-08-15': [
+                { text: 'Q3 review and planning', category: 'business', completed: false }
+            ]
+        };
+
+        let tasks = JSON.parse(JSON.stringify(initialTasks)); // Deep copy
+        let editingTask = null;
+        let draggedTask = null;
+
+        function createCalendar(containerId, year, month) {
+            const container = document.getElementById(containerId);
+            const today = new Date();
+
+            // Days of the week
+            const dayHeaders = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            dayHeaders.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day;
+                container.appendChild(dayHeader);
+            });
+
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            // Add previous month's trailing days
+            const prevMonth = new Date(year, month, 0);
+            const daysInPrevMonth = prevMonth.getDate();
+            
+            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                createDayElement(container, daysInPrevMonth - i, true, year, month - 1);
+            }
+
+            // Add current month's days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = (today.getDate() === day && today.getMonth() === month && today.getFullYear() === year);
+                createDayElement(container, day, false, year, month, isToday);
+            }
+
+            // Add next month's leading days
+            const totalCells = container.children.length - 7; // Subtract header row
+            const remainingCells = 42 - totalCells; // Standard calendar grid
+            for (let day = 1; day <= remainingCells; day++) {
+                createDayElement(container, day, true, year, month + 1);
+            }
+        }
+
+        function createDayElement(container, dayNumber, isOtherMonth = false, year, month, isToday = false) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day' + (isOtherMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+            
+            const actualMonth = isOtherMonth ? 
+                (dayNumber > 15 ? month - 1 : month + 1) : month;
+            const actualYear = actualMonth < 0 ? year - 1 : actualMonth > 11 ? year + 1 : year;
+            const normalizedMonth = actualMonth < 0 ? 11 : actualMonth > 11 ? 0 : actualMonth;
+            
+            const dateStr = `${actualYear}-${(normalizedMonth + 1).toString().padStart(2, '0')}-${dayNumber.toString().padStart(2, '0')}`;
+            
+            // Special styling for milestone days
+            if ((month === 6 && (dayNumber === 14 || dayNumber === 17 || dayNumber === 18 || dayNumber === 31)) ||
+                (month === 7 && (dayNumber === 1 || dayNumber === 5 || dayNumber === 15))) {
+                dayDiv.classList.add('milestone');
+            }
+
+            dayDiv.innerHTML = `
+                <div class="day-number">${dayNumber}</div>
+                <div class="task-list" data-date="${dateStr}"></div>
+                ${!isOtherMonth ? `<div class="add-task" onclick="addTask('${dateStr}')">+ Add Task</div>` : ''}
+            `;
+
+            // Add drop zone functionality
+            dayDiv.addEventListener('dragover', handleDragOver);
+            dayDiv.addEventListener('drop', handleDrop);
+            dayDiv.addEventListener('dragenter', handleDragEnter);
+            dayDiv.addEventListener('dragleave', handleDragLeave);
+
+            container.appendChild(dayDiv);
+
+            if (!isOtherMonth && tasks[dateStr]) {
+                const taskList = dayDiv.querySelector('.task-list');
+                tasks[dateStr].forEach((task, index) => {
+                    addTaskToList(taskList, task, dateStr, index);
+                });
+            }
+        }
+
+        function addTaskToList(taskList, task, dateStr, index) {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = `task ${task.category}${task.completed ? ' completed' : ''}`;
+            taskDiv.textContent = task.text;
+            taskDiv.draggable = true;
+            taskDiv.dataset.date = dateStr;
+            taskDiv.dataset.index = index;
+            
+            // Add drag event listeners
+            taskDiv.addEventListener('dragstart', handleDragStart);
+            taskDiv.addEventListener('dragend', handleDragEnd);
+            taskDiv.addEventListener('dblclick', () => editTask(dateStr, index));
+            
+            taskList.appendChild(taskDiv);
+        }
+
+        // Drag and Drop functionality
+        function handleDragStart(e) {
+            draggedTask = {
+                element: e.target,
+                fromDate: e.target.dataset.date,
+                index: parseInt(e.target.dataset.index)
+            };
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.drop-zone').forEach(el => el.classList.remove('drop-zone'));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            if (e.target.classList.contains('day') || e.target.closest('.day')) {
+                const day = e.target.classList.contains('day') ? e.target : e.target.closest('.day');
+                day.classList.add('drop-zone');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('day')) {
+                e.target.classList.remove('drop-zone');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropTarget = e.target.classList.contains('day') ? e.target : e.target.closest('.day');
+            if (!dropTarget || !draggedTask) return;
+
+            const toDate = dropTarget.querySelector('.task-list').dataset.date;
+            const { fromDate, index } = draggedTask;
+
+            if (fromDate !== toDate) {
+                // Move task to new date
+                const task = tasks[fromDate][index];
+                
+                // Remove from old date
+                tasks[fromDate].splice(index, 1);
+                if (tasks[fromDate].length === 0) {
+                    delete tasks[fromDate];
+                }
+
+                // Add to new date
+                if (!tasks[toDate]) tasks[toDate] = [];
+                tasks[toDate].push(task);
+
+                // Refresh calendars
+                refreshCalendars();
+            }
+
+            dropTarget.classList.remove('drop-zone');
+            draggedTask = null;
+        }
+
+        function refreshCalendars() {
+            document.getElementById('july-calendar').innerHTML = '';
+            document.getElementById('august-calendar').innerHTML = '';
+            createCalendar('july-calendar', 2025, 6); // July
+            createCalendar('august-calendar', 2025, 7); // August
+        }
+
+        function addTask(dateStr) {
+            const taskList = document.querySelector(`[data-date="${dateStr}"]`);
+            
+            const inputDiv = document.createElement('div');
+            inputDiv.innerHTML = `
+                <input type="text" class="task-input" placeholder="Enter task..." autofocus>
+                <select class="category-select">
+                    <option value="high-priority">High Priority</option>
+                    <option value="boat-prep">Boat Prep</option>
+                    <option value="business">Business/Financial</option>
+                    <option value="website">Website</option>
+                    <option value="facility">Facility/Construction</option>
+                    <option value="video">Video/Content</option>
+                </select>
+                <div class="task-controls">
+                    <button class="btn btn-save" onclick="saveTask('${dateStr}', this)">Save</button>
+                    <button class="btn btn-cancel" onclick="cancelTask(this)">Cancel</button>
+                </div>
+            `;
+            
+            taskList.appendChild(inputDiv);
+            inputDiv.querySelector('.task-input').focus();
+        }
+
+        function saveTask(dateStr, button) {
+            const inputDiv = button.closest('div').parentElement;
+            const input = inputDiv.querySelector('.task-input');
+            const select = inputDiv.querySelector('.category-select');
+            
+            if (input.value.trim()) {
+                if (!tasks[dateStr]) tasks[dateStr] = [];
+                
+                const newTask = {
+                    text: input.value.trim(),
+                    category: select.value,
+                    completed: false
+                };
+                
+                tasks[dateStr].push(newTask);
+                refreshCalendars();
+            } else {
+                cancelTask(button);
+            }
+        }
+
+        function cancelTask(button) {
+            const inputDiv = button.closest('div').parentElement;
+            inputDiv.remove();
+        }
+
+        function editTask(dateStr, index) {
+            if (editingTask) return;
+            
+            editingTask = { dateStr, index };
+            const task = tasks[dateStr][index];
+            const taskList = document.querySelector(`[data-date="${dateStr}"]`);
+            const taskDiv = taskList.children[index];
+            
+            const inputDiv = document.createElement('div');
+            inputDiv.innerHTML = `
+                <input type="text" class="task-input" value="${task.text}" autofocus>
+                <select class="category-select">
+                    <option value="high-priority" ${task.category === 'high-priority' ? 'selected' : ''}>High Priority</option>
+                    <option value="boat-prep" ${task.category === 'boat-prep' ? 'selected' : ''}>Boat Prep</option>
+                    <option value="business" ${task.category === 'business' ? 'selected' : ''}>Business/Financial</option>
+                    <option value="website" ${task.category === 'website' ? 'selected' : ''}>Website</option>
+                    <option value="facility" ${task.category === 'facility' ? 'selected' : ''}>Facility/Construction</option>
+                    <option value="video" ${task.category === 'video' ? 'selected' : ''}>Video/Content</option>
+                </select>
+                <div class="task-controls">
+                    <button class="btn btn-save" onclick="updateTask(this)">Save</button>
+                    <button class="btn btn-delete" onclick="deleteTask(this)">Delete</button>
+                    <button class="btn btn-cancel" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+            `;
+            
+            taskList.replaceChild(inputDiv, taskDiv);
+            inputDiv.querySelector('.task-input').focus();
+        }
+
+        function updateTask(button) {
+            const inputDiv = button.closest('div').parentElement;
+            const input = inputDiv.querySelector('.task-input');
+            const select = inputDiv.querySelector('.category-select');
+            
+            if (input.value.trim()) {
+                const { dateStr, index } = editingTask;
+                tasks[dateStr][index].text = input.value.trim();
+                tasks[dateStr][index].category = select.value;
+                refreshCalendars();
+            }
+            
+            editingTask = null;
+        }
+
+        function deleteTask(button) {
+            const { dateStr, index } = editingTask;
+            tasks[dateStr].splice(index, 1);
+            if (tasks[dateStr].length === 0) delete tasks[dateStr];
+            
+            refreshCalendars();
+            editingTask = null;
+        }
+
+        function cancelEdit(button) {
+            editingTask = null;
+            refreshCalendars();
+        }
+
+        // Task List Modal Functions
+        function openTaskList() {
+            generateTaskList();
+            document.getElementById('taskModal').style.display = 'block';
+        }
+
+        function closeTaskList() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        function generateTaskList() {
+            const categories = {
+                'high-priority': 'High Priority',
+                'boat-prep': 'Boat Prep',
+                'business': 'Business/Financial', 
+                'website': 'Website',
+                'facility': 'Facility/Construction',
+                'video': 'Video/Content'
+            };
+
+            const tasksByCategory = {};
+            
+            // Group tasks by category
+            Object.keys(tasks).forEach(date => {
+                tasks[date].forEach((task, index) => {
+                    if (!tasksByCategory[task.category]) {
+                        tasksByCategory[task.category] = [];
+                    }
+                    tasksByCategory[task.category].push({
+                        ...task,
+                        date: date,
+                        index: index
+                    });
+                });
+            });
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            Object.keys(categories).forEach(categoryKey => {
+                if (tasksByCategory[categoryKey]) {
+                    const section = document.createElement('div');
+                    section.className = 'category-section';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'category-header';
+                    header.textContent = categories[categoryKey];
+                    section.appendChild(header);
+
+                    const tasksContainer = document.createElement('div');
+                    tasksContainer.className = 'category-tasks';
+
+                    tasksByCategory[categoryKey].forEach(task => {
+                        const taskItem = document.createElement('div');
+                        taskItem.className = 'task-item';
+                        
+                        taskItem.innerHTML = `
+                            <div class="task-text ${task.completed ? 'completed' : ''}">${task.text}</div>
+                            <div class="task-date">${formatDate(task.date)}</div>
+                            <button class="status-toggle ${task.completed ? 'completed' : 'pending'}" 
+                                    onclick="toggleTaskStatus('${task.date}', ${task.index})">
+                                ${task.completed ? 'Done' : 'Pending'}
+                            </button>
+                        `;
+                        
+                        tasksContainer.appendChild(taskItem);
+                    });
+
+                    section.appendChild(tasksContainer);
+                    modalBody.appendChild(section);
+                }
+            });
+        }
+
+        function toggleTaskStatus(dateStr, index) {
+            tasks[dateStr][index].completed = !tasks[dateStr][index].completed;
+            refreshCalendars();
+            generateTaskList();
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function exportTasks() {
+            let exportText = "Genesis Marine Technologies - Task List\n";
+            exportText += "=" * 50 + "\n\n";
+            
+            Object.keys(tasks).sort().forEach(date => {
+                exportText += `${formatDate(date)}:\n`;
+                tasks[date].forEach(task => {
+                    const status = task.completed ? '[✓]' : '[ ]';
+                    exportText += `  ${status} ${task.text} (${task.category})\n`;
+                });
+                exportText += "\n";
+            });
+
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'genesis-tasks.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('taskModal');
+            if (event.target === modal) {
+                closeTaskList();
+            }
+        }
+
+        // Save/Load Project Functions
+        function saveProject() {
+            const projectData = {
+                version: "1.0",
+                lastSaved: new Date().toISOString(),
+                tasks: tasks,
+                metadata: {
+                    projectName: "Genesis Marine Technologies",
+                    totalTasks: Object.values(tasks).reduce((total, dayTasks) => total + dayTasks.length, 0),
+                    completedTasks: Object.values(tasks).reduce((total, dayTasks) => 
+                        total + dayTasks.filter(task => task.completed).length, 0)
+                }
+            };
+
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '-');
+            const filename = `genesis-project-${timestamp}.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            updateSaveStatus(`Saved at ${now.toLocaleTimeString()}`);
+        }
+
+        function loadProject(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const projectData = JSON.parse(e.target.result);
+                    
+                    // Validate the data structure
+                    if (!projectData.tasks || typeof projectData.tasks !== 'object') {
+                        throw new Error('Invalid project file format');
+                    }
+
+                    // Load the tasks
+                    tasks = projectData.tasks;
+                    
+                    // Ensure all tasks have the completed property
+                    Object.keys(tasks).forEach(date => {
+                        tasks[date].forEach(task => {
+                            if (task.completed === undefined) {
+                                task.completed = false;
+                            }
+                        });
+                    });
+
+                    // Refresh the calendars
+                    refreshCalendars();
+                    
+                    const loadTime = projectData.lastSaved ? 
+                        new Date(projectData.lastSaved).toLocaleString() : 'Unknown';
+                    updateSaveStatus(`Loaded project from ${loadTime}`);
+                    
+                    // Show success message
+                    if (projectData.metadata) {
+                        const meta = projectData.metadata;
+                        alert(`Project loaded successfully!\nTotal tasks: ${meta.totalTasks}\nCompleted: ${meta.completedTasks}\nLast saved: ${loadTime}`);
+                    }
+                } catch (error) {
+                    alert('Error loading project file. Please make sure you selected a valid Genesis project file.');
+                    console.error('Load error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+            // Clear the input so the same file can be loaded again
+            input.value = '';
+        }
+
+        function updateSaveStatus(message) {
+            const statusElement = document.getElementById('saveStatus');
+            statusElement.textContent = message;
+            statusElement.style.color = '#28a745';
+            
+            setTimeout(() => {
+                statusElement.style.color = '';
+                statusElement.textContent = 'Ready to save';
+            }, 3000);
+        }
+
+        // Auto-backup functionality
+        let autoBackupInterval;
+        let changesSinceBackup = false;
+
+        function startAutoBackup() {
+            // Auto-backup every 10 minutes if there are changes
+            autoBackupInterval = setInterval(() => {
+                if (changesSinceBackup) {
+                    createAutoBackup();
+                    changesSinceBackup = false;
+                }
+            }, 10 * 60 * 1000); // 10 minutes
+        }
+
+        function createAutoBackup() {
+            const projectData = {
+                version: "1.0",
+                lastSaved: new Date().toISOString(),
+                tasks: tasks,
+                isAutoBackup: true,
+                metadata: {
+                    projectName: "Genesis Marine Technologies - Auto Backup",
+                    totalTasks: Object.values(tasks).reduce((total, dayTasks) => total + dayTasks.length, 0),
+                    completedTasks: Object.values(tasks).reduce((total, dayTasks) => 
+                        total + dayTasks.filter(task => task.completed).length, 0)
+                }
+            };
+
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '-');
+            const filename = `genesis-auto-backup-${timestamp}.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            const statusElement = document.getElementById('autoBackupStatus');
+            statusElement.textContent = `Last backup: ${now.toLocaleTimeString()}`;
+            statusElement.style.color = '#007bff';
+            
+            setTimeout(() => {
+                statusElement.style.color = '';
+                statusElement.textContent = 'Enabled';
+            }, 5000);
+        }
+
+        // Track changes to trigger auto-backup
+        function markChanged() {
+            changesSinceBackup = true;
+        }
+
+        // Override functions to track changes
+        const originalSaveTask = saveTask;
+        const originalUpdateTask = updateTask;
+        const originalDeleteTask = deleteTask;
+        const originalToggleTaskStatus = toggleTaskStatus;
+
+        function saveTask(dateStr, button) {
+            originalSaveTask(dateStr, button);
+            markChanged();
+        }
+
+        function updateTask(button) {
+            originalUpdateTask(button);
+            markChanged();
+        }
+
+        function deleteTask(button) {
+            originalDeleteTask(button);
+            markChanged();
+        }
+
+        function toggleTaskStatus(dateStr, index) {
+            originalToggleTaskStatus(dateStr, index);
+            markChanged();
+        }
+
+        // Also track drag and drop changes
+        const originalHandleDrop = handleDrop;
+        function handleDrop(e) {
+            originalHandleDrop(e);
+            if (draggedTask) {
+                markChanged();
+            }
+        }
+
+        // Initialize calendars and auto-backup
+        createCalendar('july-calendar', 2025, 6); // July
+        createCalendar('august-calendar', 2025, 7); // August
+        startAutoBackup();
+    </script>
+</body>
+</html>
